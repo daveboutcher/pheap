@@ -1,0 +1,3 @@
+*.o
+*~
+pheap_test
