@@ -16,4 +16,7 @@ void *pmalloc(struct pheap *ph, size_t size);
 
 void pfree(struct pheap *ph, void *ptr);
 
+size_t pmalloc_usable_size(struct pheap *ph, void *ptr);
+
+void *pmmheap(size_t prefix, size_t len, struct pheap **ph);
 #endif /* __PHEAP_H__ */

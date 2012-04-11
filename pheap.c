@@ -147,7 +147,6 @@ static void *flist_pop(struct pheap_free **head)
         size_t treesize = heapsize >> (PHEAP_MIN_ORDER-1);	        \
         size_t treebytes = (treesize + 3U) / 4U
 
-/* Return the 
 size_t __attribute__((pure)) pheap_mgmt_size(size_t heapsize)
 {
 	if (__builtin_popcountl(heapsize) != 1) {
@@ -309,10 +308,38 @@ void *pmalloc(struct pheap *ph, size_t size)
 	return nextblock;
 }
 
-void pfree(struct pheap *ph, void *ptr)
+static uint64_t findorder(struct pheap *ph, void *ptr, uint64_t max_order)
 {
 	uint64_t order;
 	uint64_t tagNo = 0;
+
+	/* Don't need to do this under a lock, since we own this memory */
+	for (order = 0; order <= max_order; order++) {
+		tagNo = ptr_to_tag(ph, ptr, order);
+		uint8_t tag = getTag(ph->tree, tagNo, ph->max_tree);
+
+		if (tag == BLOCK_FREE) {
+			fprintf(stderr,"Invalid freed address!\n");
+			return (size_t)-1;
+		} else if (tag == BLOCK_SPLIT) {
+			fprintf(stderr,"Wierd, found split tag first!\n");
+			return (size_t)-1;
+		} else if (tag == BLOCK_ALLOC) {
+			break;
+		}
+	}
+
+	if (order > max_order) {
+		fprintf(stderr, "bad free!\n");
+		return (size_t)-1;
+	}
+	
+	return order;
+}
+
+void pfree(struct pheap *ph, void *ptr)
+{
+	uint64_t order;
 	uint64_t max_order = ph->max_order; /* make a local copy */
 
 	assert(ph->magic == PHEAP_MAGIC);
@@ -326,28 +353,13 @@ void pfree(struct pheap *ph, void *ptr)
 		fprintf(stderr,"Invalid address in free\n");
 		return;
 	}
+	
+	order = findorder(ph, ptr, max_order);
 
-	/* Don't need to do this under a lock, since we own this memory */
-	for (order = 0; order <= max_order; order++) {
-		tagNo = ptr_to_tag(ph, ptr, order);
-		uint8_t tag = getTag(ph->tree, tagNo, ph->max_tree);
+	if (order == (size_t)-1)
+	    return;
 
-		if (tag == BLOCK_FREE) {
-			fprintf(stderr,"Double free of address!\n");
-			return;
-		} else if (tag == BLOCK_SPLIT) {
-			fprintf(stderr,"Wierd, found split tag first!\n");
-			return;
-		} else if (tag == BLOCK_ALLOC) {
-			break;
-		}
-	}
-
-	if (order > max_order) {
-		fprintf(stderr, "bad free!\n");
-		return;
-	}
-
+	uint64_t tagNo = ptr_to_tag(ph, ptr, order);
 	uint64_t pairTagNo = pair_tag(tagNo);
 
 	pthread_spin_lock(&ph->lock);
@@ -386,4 +398,29 @@ void pfree(struct pheap *ph, void *ptr)
 	flist_push(&ph->frees[order], ptr);
 	pthread_spin_unlock(&ph->lock);
 	return;
+}
+
+size_t pmalloc_usable_size(struct pheap *ph, void *ptr)
+{
+	uint64_t order;
+	uint64_t max_order = ph->max_order; /* make a local copy */
+
+	assert(ph->magic == PHEAP_MAGIC);
+
+	assert(ptr >= ph->heap);
+
+	uint64_t addr = (uint64_t)ptr - (uint64_t)ph->heap;
+
+	/* check for non-round address */
+	if (addr & (PHEAP_MIN_SIZE-1)) {
+		fprintf(stderr,"Invalid address in free\n");
+		return 0;
+	}
+	
+	order = findorder(ph, ptr, max_order);
+
+	if (order == (size_t)-1)
+	    return 0;
+	
+	return (1U << (order + PHEAP_MIN_ORDER));
 }
