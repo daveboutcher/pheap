@@ -1,0 +1,62 @@
+.\" Man pages for the pheap functions
+.
+.\" Written by Dave Boutcher, 2012
+.TH PHEAP 3 "4/25/2012" "(C) Dave Boutcher"
+.
+.SH NAME
+pheap, pmalloc, pfree, pheap_init, pheap_mgmt_size, pmalloc_usable_size \- Private heap allocation and management
+.
+.SH SYNOPSIS
+.B #include <pheap.h>
+.sp
+.B struct pheap *pheap_init(void *mgmt, size_t mgmt_size, void *heap, size_t heapsize, int shared);
+.br
+.B void *pmalloc(struct pheap *ph, size_t size);
+.br
+.B void pfree(struct pheap *ph, void *ptr);
+.br
+.B size_t pheap_mgmt_size(size_t heapsize);
+.br
+.B size_t pmalloc_usable_size(struct pheap *ph, void *ptr);
+.sp
+.SH DESCRIPTION
+.B pheap_init()
+creates a private heap.  Two addresses and sizes are required.  The memory for
+the management of the heap is pointed to by the
+.B mgmt
+parameter, and its size given in
+.B mgmt_size.  The size of the management area can be calculated by calling
+.B pheap_mgmt_size().  The
+.B heap
+and
+.B heapsize
+parameters describe the memory used by the heap itself.  Note that
+.B pheap
+does not itself allocate any memory, since it is designed to be used in constrained
+environments.  The
+.B shared
+paramter should be true if this heap will be accessed concurrently from multiple processes.
+.sp
+.B pmalloc()
+allocates memory from the private heap.
+.sp
+.B pfree()
+frees memory allocated from the private heap.
+.sp
+.B pheap_mgmt_size()
+is a utility routine that returns the amount of management memory required to manage a heap
+of a given size.  the
+.B heapsize
+value passed into
+.B pheap_init
+must be at least this size.
+.sp
+.B pmalloc_usable_size()
+is similar to the malloc_usable_size call, and returns the amount of actual usable memory
+allocated by a given
+.B pmalloc()
+call.
+.SH AUTHOR
+Dave Boutcher <dboutcher@gmail.com>
+.SH SEE ALSO
+malloc(3)

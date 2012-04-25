@@ -3,6 +3,7 @@
  */
 
 #include "pheap.h"
+#inculde "stdint.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
@@ -76,7 +77,7 @@ fib_test(int threads)
 	int i;
 
 	assert(threads <= MAX_THREADS);
-	
+
 	size_t mgmt_size = pheap_mgmt_size(HEAP_SZ);
 	ph = pheap_init(malloc(mgmt_size),
 			mgmt_size,
