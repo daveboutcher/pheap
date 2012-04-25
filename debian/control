@@ -1,0 +1,22 @@
+Source: libpheap
+Priority: optional
+Section: libdevel
+Maintainer: Dave Boutcher <daveboutcher@gmail.com>
+XSBC-Original-Maintainer: Dave Boutcher <daveboutcher@gmail.com>
+Uploaders: Dave Boutcher <daveboutcher@gmail.com>
+Build-Depends: autotools-dev,
+ cdbs (>= 0.4.53),
+ debhelper (>= 7.0.1),
+ dh-buildinfo
+Standards-Version: 3.9.1
+
+Package: libpheap-dev
+Section: libdevel
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Architecture: any
+Replaces: libpheap
+Description: A private heap library (development files)
+ .
+ This package provides the header files and documentation needed by
+ developers.
+
