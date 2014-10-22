@@ -47,6 +47,7 @@
 
 #define PHEAP_MAGIC (0xDB014EA9LU)
 #define PHEAP_FREE_MAGIC (0xDB024EA9LU)
+#define PHEAP_U_NON_ZERO_POWER_OF_TWO(x) ((x) && !((x) & ((x) - 1)))
 
 /* Double linked list put at the beginning of every freed block */
 struct pheap_free {
@@ -151,7 +152,7 @@ static void *flist_pop(struct pheap_free **head)
 
 size_t __attribute__((pure)) pheap_mgmt_size(size_t heapsize)
 {
-	if (__builtin_popcountl(heapsize) != 1) {
+	if (!PHEAP_U_NON_ZERO_POWER_OF_TWO(heapsize)) {
 		fprintf(stderr,"Heap size must be a power of 2\n");
 		return 0;
 	}
@@ -174,7 +175,7 @@ struct pheap *pheap_init(void *mgmt, size_t mgmt_size,
 			 void *heap, size_t heapsize,
 			 int shared)
 {
-	if (__builtin_popcountl(heapsize) != 1) {
+	if (!PHEAP_U_NON_ZERO_POWER_OF_TWO(heapsize)) {
 		fprintf(stderr,"Heap size must be a power of 2\n");
 		return NULL;
 	}
