@@ -3,7 +3,7 @@
  */
 
 #include "pheap.h"
-#inculde "stdint.h"
+#include "stdint.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
@@ -11,6 +11,20 @@
 struct fib {
 	struct fib	*next;
 	uint64_t	n;
+};
+
+struct TestTuple {
+    size_t v;
+    unsigned int t:1;
+} testCases[] = {
+    {.v = 0, .t = 0},
+    {.v = -1, .t = 0}, // Auto fill set all the bits in v
+    {.v = 1, .t = 1},
+    {.v = 2, .t = 1},
+    {.v = 0xff, .t = 0},
+    {.v = 1<<6, .t = 1},
+    {.v = 68272, .t = 0},
+    {.v = 0x1000, .t = 1},
 };
 
 static inline size_t
@@ -95,11 +109,37 @@ fib_test(int threads)
 	free(ph);
 }
 
+int test_nz_power_of_two()
+{
+    struct TestTuple cur;
+    int i, len = sizeof(testCases)/sizeof(testCases[0]), res;
+    int failed = 0, passed = 0;
+
+    for (i=0; i < len; ++i) {
+        cur = testCases[i];
+        res = PHEAP_U_NON_ZERO_POWER_OF_TWO(cur.v);
+        if (cur.t != res) {
+            printf("Failed: %d expected %d got %d\n", cur.v, cur.t, res) ;
+            ++failed;
+        } else {
+            printf("Passed: %d\n", cur.v);
+            ++passed;
+        }
+    }
+
+    if (failed)
+        return -1;
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     fib_test(1);
     fib_test(2);
     fib_test(4);
     fib_test(8);
+    test_nz_power_of_two();
+
     return 0;
 }
